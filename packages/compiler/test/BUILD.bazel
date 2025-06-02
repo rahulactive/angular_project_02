@@ -1,0 +1,67 @@
+load("//tools:defaults.bzl", "jasmine_node_test", "karma_web_test_suite")
+load("//tools:defaults2.bzl", "ts_project")
+
+# Test that should only be run in node
+NODE_ONLY = [
+    "**/*_node_only_spec.ts",
+    "aot/**/*.ts",
+]
+
+ts_project(
+    name = "test_lib",
+    testonly = True,
+    srcs = glob(
+        ["**/*.ts"],
+        exclude = NODE_ONLY,
+    ),
+    interop_deps = [
+        "//packages/common",
+        "//packages/compiler",
+        "//packages/compiler/test/expression_parser/utils",
+        "//packages/compiler/test/ml_parser/util",
+        "//packages/core",
+        "//packages/core/src/compiler",
+        "//packages/core/testing",
+        "//packages/platform-browser",
+        "//packages/platform-browser-dynamic",
+        "//packages/platform-browser/testing",
+        "//packages/private/testing",
+    ],
+    deps = [
+        "//:node_modules/source-map",
+    ],
+)
+
+ts_project(
+    name = "test_node_only_lib",
+    testonly = True,
+    srcs = glob(
+        NODE_ONLY,
+    ),
+    interop_deps = [
+        ":test_lib",
+        "//packages/compiler",
+        "//packages/compiler/test/expression_parser/utils",
+        "//packages/core",
+    ],
+    deps = [
+        "//:node_modules/typescript",
+    ],
+)
+
+jasmine_node_test(
+    name = "test",
+    bootstrap = ["//tools/testing:node"],
+    deps = [
+        ":test_lib",
+        ":test_node_only_lib",
+        "@npm//source-map",
+    ],
+)
+
+karma_web_test_suite(
+    name = "test_web",
+    deps = [
+        ":test_lib",
+    ],
+)
